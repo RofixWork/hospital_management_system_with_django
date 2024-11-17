@@ -139,7 +139,7 @@ MESSAGE_TAGS = {messages.ERROR: "danger"}
 
 # Authentication settings
 
-# AUTH_USER_MODEL = ""
+AUTH_USER_MODEL = "userauths.User"
 LOGIN_URL = "/auth/login/"
 
 LOGIN_REDIRECT_URL = "/"
