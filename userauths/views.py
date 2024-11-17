@@ -4,22 +4,23 @@ from django.urls import reverse_lazy
 from django.views.generic import CreateView, FormView
 
 from userauths.models import User
+from utils.mixins import RedirectAuthenticationUser
 
 from .forms import UserLoginForm, UserRegisterForm
 
 
 # Create your views here.
-class RegisterView(CreateView):
+class RegisterView(RedirectAuthenticationUser, CreateView):
     model = User
     template_name = "userauths/sign-up.html"
     form_class = UserRegisterForm
     success_url = reverse_lazy("auth.login")
 
 
-class LoginView(FormView):
+class LoginView(RedirectAuthenticationUser, FormView):
     template_name = "userauths/sign-in.html"
     form_class = UserLoginForm
-    success_url = "/"
+    success_url = reverse_lazy("home")
 
     def form_valid(self, form: UserLoginForm):
         # Process the form data here.
