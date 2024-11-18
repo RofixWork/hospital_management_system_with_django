@@ -3,6 +3,8 @@ from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, FormView
 
+from doctor.models import Doctor
+from patient.models import Patient
 from userauths.models import User
 from utils.mixins import RedirectAuthenticationUser
 
@@ -15,6 +17,18 @@ class RegisterView(RedirectAuthenticationUser, CreateView):
     template_name = "userauths/sign-up.html"
     form_class = UserRegisterForm
     success_url = reverse_lazy("auth.login")
+
+    def form_valid(self, form: UserRegisterForm):
+        user = form.save()
+        full_name = form.cleaned_data.get("username")
+        email = form.cleaned_data.get("email")
+        user_type = form.cleaned_data.get("user_type")
+
+        if user_type == "doctor":
+            Doctor.objects.create(user=user, full_name=full_name)
+        elif user_type == "patient":
+            Patient.objects.create(user=user, full_name=full_name, email=email)
+        return super().form_valid(form)
 
 
 class LoginView(RedirectAuthenticationUser, FormView):

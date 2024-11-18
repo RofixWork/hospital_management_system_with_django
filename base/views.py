@@ -4,5 +4,5 @@ from django.views.generic import TemplateView
 
 
 # Create your views here.
-class HomeView(LoginRequiredMixin, TemplateView):
+class HomeView(TemplateView):
     template_name = "base/home.html"
