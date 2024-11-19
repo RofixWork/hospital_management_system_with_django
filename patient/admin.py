@@ -7,10 +7,10 @@ from .models import Notification, Patient
 
 @admin.register(Patient)
 class PatientAdmin(admin.ModelAdmin):
-    list_display = ["id", "full_name", "email"]
+    list_display = ["id", "user", "full_name", "email"]
     search_fields = ["full_name", "email"]
     list_filter = ["gender"]
-    list_display_links = ["full_name"]
+    list_display_links = ["user", "full_name"]
 
 
 @admin.register(Notification)

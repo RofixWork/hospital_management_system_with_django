@@ -7,10 +7,16 @@ from .models import Doctor, Notification
 
 @admin.register(Doctor)
 class DoctorAdmin(admin.ModelAdmin):
-    list_display = ["id", "full_name", "mobile", "next_available_appointment_date"]
+    list_display = [
+        "id",
+        "user",
+        "full_name",
+        "mobile",
+        "next_available_appointment_date",
+    ]
     search_fields = ["full_name", "mobile"]
     list_filter = ["next_available_appointment_date"]
-    list_display_links = ["full_name"]
+    list_display_links = ["user", "full_name"]
 
 
 @admin.register(Notification)
