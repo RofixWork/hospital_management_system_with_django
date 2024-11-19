@@ -15,6 +15,7 @@ class Service(models.Model):
         max_digits=10, decimal_places=2, validators=[MinValueValidator(0.0)]
     )
     thumbnail = models.ImageField(upload_to="images")
+    doctors_available = models.ManyToManyField(Doctor)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -7,7 +7,7 @@ from .models import Appointment, LabTest, MedicalRecord, Prescription, Service
 
 @admin.register(Service)
 class ServiceAdmin(admin.ModelAdmin):
-    list_display = ["id", "name", "cost", "tax"]
+    list_display = ["id", "name", "cost"]
     search_fields = ["name"]
     list_filter = ["cost"]
     list_display_links = ["name"]
