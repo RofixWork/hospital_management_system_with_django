@@ -8,6 +8,18 @@ from patient.models import Patient
 
 
 # Create your models here.
+class APPOINTMENT_TYPE(models.TextChoices):
+    PENDING = "pending", "Pending"
+    SCHEDULED = "scheduled", "Scheduled"
+    COMPLETED = "completed", "Completed"
+    CANCELLED = "cancelled", "Cancelled"
+
+
+class BillingType(models.TextChoices):
+    PAID = "paid", "Paid"
+    UNPAID = "unpaid", "Unpaid"
+
+
 class Service(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField()
@@ -33,13 +45,6 @@ class Service(models.Model):
 
 
 class Appointment(models.Model):
-
-    class APPOINTMENT_TYPE(models.TextChoices):
-        PENDING = "pending", "Pending"
-        SCHEDULED = "scheduled", "Scheduled"
-        COMPLETED = "completed", "Completed"
-        CANCELLED = "cancelled", "Cancelled"
-
     doctor = models.ForeignKey(
         Doctor,
         on_delete=models.SET_NULL,
@@ -61,13 +66,17 @@ class Appointment(models.Model):
         blank=True,
         related_name="service_appointments",
     )
-    appointment_id = shortuuid.ShortUUID(alphabet="1234567890").random(length=6)
+    appointment_id = models.CharField(
+        max_length=6, unique=True, editable=False, null=True
+    )
     appointment_date = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     status = models.CharField(
         max_length=20,
         choices=APPOINTMENT_TYPE.choices,
         default=APPOINTMENT_TYPE.PENDING,
     )
+    issues = models.TextField(null=True)
+    symptoms = models.TextField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -80,6 +89,13 @@ class Appointment(models.Model):
         patient_name = getattr(self.patient, "full_name", "Unknown Patient")
         doctor_name = getattr(self.doctor, "full_name", "Unknown Doctor")
         return f"Appointment for {patient_name} with Dr. {doctor_name}"
+
+    def save(self, *args, **kwargs):
+        if not self.appointment_id:
+            self.appointment_id = shortuuid.ShortUUID(alphabet="1234567890").random(
+                length=6
+            )
+        return super().save(*args, **kwargs)
 
 
 class MedicalRecord(models.Model):
@@ -128,3 +144,29 @@ class Prescription(models.Model):
 
     def __str__(self) -> str:
         return f"Prescription for {getattr(self.appointment.patient, 'full_name', 'Unknown')}"
+
+
+class Billing(models.Model):
+    appointment = models.OneToOneField(Appointment, on_delete=models.CASCADE)
+    patient = models.OneToOneField(Patient, on_delete=models.CASCADE)
+    billing_id = models.CharField(max_length=6, unique=True, editable=False)
+    date = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=15, choices=BillingType.choices)
+    sub_total = models.DecimalField(max_digits=10, decimal_places=2)
+    tax = models.DecimalField(max_digits=10, decimal_places=2)
+    total = models.DecimalField(max_digits=10, decimal_places=2)
+
+    class Meta:
+        ordering = ["-date"]
+        verbose_name = "Billing"
+        verbose_name_plural = "Billings"
+
+    def __str__(self) -> str:
+        return f"Billing for {getattr(self.patient, 'full_name', 'Unknown')} (${self.total:.2f})"
+
+    def save(self, *args, **kwargs):
+        if not self.billing_id:
+            self.billing_id = shortuuid.ShortUUID(alphabet="1234567890").random(
+                length=6
+            )
+        return super().save(*args, **kwargs)

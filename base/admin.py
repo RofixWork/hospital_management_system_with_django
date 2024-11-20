@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Appointment, LabTest, MedicalRecord, Prescription, Service
+from .models import Appointment, Billing, LabTest, MedicalRecord, Prescription, Service
 
 # Register your models here.
 
@@ -16,7 +16,7 @@ class ServiceAdmin(admin.ModelAdmin):
 @admin.register(Appointment)
 class AppointmentAdmin(admin.ModelAdmin):
     list_display = ["id", "patient", "doctor", "status"]
-    list_display_links = ["id"]
+    list_display_links = ["id", "patient"]
     search_fields = ["patient__full_name", "doctor__full_name"]
     list_filter = ["status"]
 
@@ -37,3 +37,10 @@ class MedicalRecordAdmin(admin.ModelAdmin):
 @admin.register(Prescription)
 class PrescriptionAdmin(admin.ModelAdmin):
     list_display = ["appointment", "id", "medications"]
+
+
+@admin.register(Billing)
+class BillingAdmin(admin.ModelAdmin):
+    list_display = ["appointment", "id", "total", "tax", "status"]
+    list_display_links = ["appointment"]
+    list_filter = ["status"]
