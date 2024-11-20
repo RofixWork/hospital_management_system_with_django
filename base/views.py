@@ -1,6 +1,7 @@
 from decimal import Decimal
 from typing import Any
 
+from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import Http404, HttpRequest
 from django.shortcuts import get_object_or_404, redirect, render
@@ -136,4 +137,5 @@ class CheckoutView(LoginRequiredMixin, TemplateView):
         context["patient"] = self.patient
         context["doctor"] = self.appointment.doctor
         context["billing"] = self.billing
+        context["STRIPE_PUBLIC_KEY"] = settings.STRIPE_PUBLIC_KEY
         return context

@@ -14,6 +14,14 @@ import os
 from pathlib import Path
 
 from django.contrib.messages import constants as messages
+from environs import Env
+
+env = Env()
+env.read_env()
+
+# Application definition
+STRIPE_PUBLIC_KEY = env("STRIPE_PUBLIC_KEY")
+STRIPE_SECRET_KEY = env("STRIPE_SECRET_KEY")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
