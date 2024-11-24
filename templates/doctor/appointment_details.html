@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block body %}
+<section class="pt-5 pb-5">
+    <div class="container">
+        <div class="row mt-0 mt-md-4">
+            {% include "doctor/includes/sidebar.html" %}
+            <div class="col-lg-9 col-md-8 col-12">
+                <h4 class="mb-0 mb-4 fw-bold">Appointment Detail #12345</h4>
+                <div class="card mb-4">
+                    <div class="shadow border p-3 mb-4 rounded-4">
+                        <p>
+                            <a>
+                                <p><span class="fw-semibold text-dark">Appointment ID:</span> #{{appointment.appointment_id}}</p>
+                                <p><span class="fw-semibold text-dark">Service:</span> {{appointment.service.name|capfirst}}</p>
+                                <p><span class="fw-semibold text-dark">Patient:</span> {{appointment.patient.full_name|capfirst}}</p>
+                                <p><span class="fw-semibold text-dark">Issue:</span> {{appointment.issues}}</p>
+                                <p><span class="fw-semibold text-dark">Symptoms:</span> {{appointment.symptoms}}</p>
+                                <p><span class="fw-semibold text-dark">Status:</span> {{appointment.status|upper}}</p>
+                                <p><span class="fw-semibold text-dark">Date:</span> {{appointment.appointment_date}}</p>
+                                <p>
+                                    <span class="fw-semibold text-dark">Action:</span>
+                                    {% if appointment.status|lower == 'completed' %}
+                                        <a href="javascript:void(0)" class="btn btn-success btn-sm">Complete Appointment <i class="fas fa-check-circle ms-2"></i></a>
+                                    {% elif appointment.status|lower == 'cancelled' %}
+                                        <a href={% url "doctor_activate_appointment" appointment_id=appointment.appointment_id %} class="btn btn-outline-info btn-sm">Re-Activate Appointment <i class="fas fa-check-circle ms-2"></i></a>
+                                    {% else %}
+                                        <a href={% url "doctor_cancel_appointment" appointment_id=appointment.appointment_id %} class="btn btn-outline-danger btn-sm">Cancel Appointment <i class="fas fa-trash ms-2"></i></a>
+                                        <a href={% url "doctor_complete_appointment" appointment_id=appointment.appointment_id %} class="btn btn-outline-success btn-sm">Complete Appointment <i class="fas fa-check-circle ms-2"></i></a>
+                                    {% endif %}
+                                </p>
+                            </a>
+                        </p>
+                    </div>
+                </div>
+
+                <div id="medical-report">
+                    <div class="d-flex justify-content-between">
+                        <h4 class="mb-0 mb-4 fw-bold">Medical Reports</h4>
+                        <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMedicalReport" aria-expanded="false" aria-controls="collapseMedicalReport">Add Medical Report <i class="fas fa-plus ms-2"></i></button>
+                    </div>
+                    <div class="collapse" id="collapseMedicalReport">
+                        <div class="border p-3 mb-4 rounded-4">
+                            <form action={% url "create_medical_record" appointment_id=appointment.appointment_id %} method="POST">
+                                {% csrf_token %}
+                                <input type="text" class="form-control mb-3" name="diagnosis" placeholder="Diagnosis" />
+                                <input type="text" class="form-control mb-3" name="treatment" placeholder="Treatment" />
+                                <button class="btn btn-secondary btn-sm">Save <i class="fas fa-save ms-2"></i></button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="card mb-4">
+                        <div class="border p-3 mb-4 rounded-4">
+                            {% for medical_record in medical_records %}
+                                <div class="shadow p-3 rounded-4 mb-3">
+                                    <p><span class="fw-semibold text-dark">Diagnosis:</span> {{medical_record.diagnosis}}</p>
+                                    <p><span class="fw-semibold text-dark">Treatment:</span> {{medical_record.treatment}}</p>
+                                    <button class="btn btn-dark btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMedicalRecord{{medical_record.id}}" aria-expanded="false" aria-controls="collapseMedicalRecord{{medical_record.id}}">Edit <i class="fas fa-edit ms-2"></i></button>
+                                    <div class="collapse mt-3" id="collapseMedicalRecord{{medical_record.id}}">
+                                        <div class="border p-3 rounded-4">
+                                            <form action={% url "edit_medical_record" medical_record_id=medical_record.id appointment_id=medical_record.appointment.appointment_id%} method="POST">
+                                                {% csrf_token %}
+                                                <input type="text" class="form-control mb-3" value="{{medical_record.diagnosis}}" name="diagnosis" placeholder="Diagnosis" />
+                                                <input type="text" class="form-control mb-3" value="{{medical_record.treatment}}" name="treatment" placeholder="Treatment" />
+                                                <button class="btn btn-secondary btn-sm">Save Changes <i class="fas fa-save ms-2"></i></button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% empty %}
+                                <p>No medical records</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <div id="lab-test">
+                    <div class="d-flex justify-content-between">
+                        <h4 class="mb-0 mb-4 fw-bold">Labs Tests Reports</h4>
+                        <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#collapseLabTest" aria-expanded="false" aria-controls="collapseLabTest">Add Lab Test <i class="fas fa-plus ms-2"></i></button>
+                    </div>
+                    <div class="collapse" id="collapseLabTest">
+                        <div class="border p-3 mb-4 rounded-4">
+                            <form action={% url "create_lab_test" appointment_id=appointment.appointment_id %} method="POST">
+                                {% csrf_token %}
+                                <input type="text" class="form-control mb-3" name="test_name" placeholder="Test name" />
+                                <input type="text" class="form-control mb-3" name="description" placeholder="Description" />
+                                <textarea name="result" class="form-control mb-3">{{lab_test.result}}</textarea>
+                                <button class="btn btn-secondary btn-sm">Save <i class="fas fa-save ms-2"></i></button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="card mb-4">
+                        <div class="border p-3 mb-4 rounded-4">
+                            {% for lab_test in lab_tests %}
+                                <div class="shadow p-3 rounded-4 mb-3">
+                                    <p><span class="fw-semibold text-dark">Test Name:</span> {{lab_test.test_name}}</p>
+                                    <p><span class="fw-semibold text-dark">Description:</span> {{lab_test.description}}</p>
+                                    <p><span class="fw-semibold text-dark">Result:</span> {{lab_test.result}}</p>
+                                    <button class="btn btn-dark btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#collapseLabTest{{lab_test.id}}" aria-expanded="false" aria-controls="collapseLabTest{{lab_test.id}}">Edit <i class="fas fa-edit ms-2"></i></button>
+                                    <div class="collapse mt-3" id="collapseLabTest{{lab_test.id}}">
+                                        <div class="border p-3 rounded-4">
+                                            <form action={% url "edit_lab_test" lab_test_id=lab_test.id appointment_id=lab_test.appointment.appointment_id %}  method="POST">
+                                                {% csrf_token %}
+                                                <input type="text" class="form-control mb-3" value="{{lab_test.test_name}}" name="test_name" placeholder="Test name" />
+                                                <input type="text" class="form-control mb-3" value="{{lab_test.description}}" name="description" placeholder="Description" />
+                                                <textarea name="result" class="form-control mb-3">{{lab_test.result}}</textarea>
+                                                <button class="btn btn-secondary btn-sm">Save Changes <i class="fas fa-save ms-2"></i></button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% empty %}
+                                <p>No lab tests</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <h4 class="mb-0 mb-4 fw-bold">Prescription</h4>
+                    <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePrescription" aria-expanded="false" aria-controls="collapsePrescription">Add Prescription <i class="fas fa-plus ms-2"></i></button>
+                </div>
+                <div class="collapse" id="collapsePrescription">
+                    <div class="border p-3 mb-4 rounded-4">
+                        <form action={% url "create_prescription" appointment_id=appointment.appointment_id %} method="POST">
+                            {% csrf_token %}
+                            <textarea class="form-control mb-3" name="medications" placeholder="Medications"></textarea>
+                            <button class="btn btn-secondary btn-sm">Save <i class="fas fa-save ms-2"></i></button>
+                        </form>
+                    </div>
+                </div>
+                <div class="card mb-4">
+                    <div class="border p-3 mb-4 rounded-4">
+                        {% for prescription in prescriptions %}
+                            <div class="shadow p-3 rounded-4 mb-3">
+                                <p><span class="fw-semibold text-dark">Medications:</span> {{prescription.medications}}</p>
+                                <button class="btn btn-dark btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePrescription{{prescription.id}}" aria-expanded="false" aria-controls="collapsePrescription{{prescription.id}}">Edit <i class="fas fa-edit ms-2"></i></button>
+                                <div class="collapse mt-3" id="collapsePrescription{{prescription.id}}">
+                                    <div class="border p-3 rounded-4">
+                                        <form action={% url "edit_prescription" prescription_id=prescription.id appointment_id=prescription.appointment.appointment_id %} method="POST">
+                                            {% csrf_token %}
+                                            <input type="text" class="form-control mb-3" name="medications" value="{{prescription.medications}}" placeholder="Medications" />
+                                            <button class="btn btn-secondary btn-sm">Save Changes <i class="fas fa-save ms-2"></i></button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <p>No prescriptions</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock body %}
+    

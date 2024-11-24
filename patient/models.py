@@ -39,6 +39,13 @@ class Patient(models.Model):
 
 
 class Notification(models.Model):
+    appointment = models.ForeignKey(
+        "base.Appointment",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="patient_appointment_notifications",
+    )
     patient = models.ForeignKey(
         Patient, on_delete=models.SET_NULL, null=True, blank=True
     )

@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block body %}
+<section class="pt-5 pb-5">
+    <div class="container">
+        <div class="row mt-0 mt-md-4">
+            {% include "patient/includes/sidebar.html" %}
+
+            <div class="col-lg-9 col-md-8 col-12">
+                <h4 class="mb-0 mb-4 fw-bold">Payments</h4>
+                <form class="row" enctype="multipart/form-data" method='POST'>
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <div class="{% if field.name in 'full_name,image' %} col-lg-12 {% else %} col-lg-6 {% endif %}  mb-3">
+                            <label class="form-label" for="{{field.id_for_label}}">{{field.label}}</label>
+                            {{field}}
+                            {% if field.errors %}
+                                {% for error in field.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                    <button class="btn btn-success" type='submit'>Save Changes <i class="fas fa-check-circle ms-2"></i></button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock body %}
+    

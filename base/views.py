@@ -1,17 +1,31 @@
 from decimal import Decimal
 from typing import Any
 
+import stripe
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import Http404, HttpRequest
+from django.http import (
+    Http404,
+    HttpRequest,
+    HttpResponseBadRequest,
+    HttpResponseServerError,
+    JsonResponse,
+)
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
+from django.views import View
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import FormView, TemplateView
 from django.views.generic.detail import DetailView
 from django.views.generic.list import ListView
 
 from doctor.models import Doctor
+from doctor.models import Notification as DoctorNotification
+from doctor.models import NotificationType as DoctorNotificationType
+from patient.models import Notification as PatientNotification
+from patient.models import NotificationType as PatientNotificationType
 from patient.models import Patient
+from utils.mixins import CheckUserIsPatientContextMixin
 
 from .forms import BookAppointmentForm
 from .models import APPOINTMENT_TYPE, Appointment, Billing, BillingType, Service
@@ -35,6 +49,8 @@ class BookAppointmentView(LoginRequiredMixin, FormView):
     success_url = reverse_lazy("home")
 
     def validate_request(self):
+        if not self.request.user.is_authenticated:
+            raise Http404
         service_id = self.kwargs.get("service_id")
         doctor_id = self.kwargs.get("doctor_id")
         self.service = get_object_or_404(Service, id=service_id)
@@ -78,7 +94,6 @@ class BookAppointmentView(LoginRequiredMixin, FormView):
         # update patient
         self.patient.full_name = form.cleaned_data.get("full_name")
         self.patient.email = form.cleaned_data.get("email")
-        self.patient.mobile = form.cleaned_data.get("mobile")
         self.patient.gender = form.cleaned_data.get("gender")
         self.patient.date_of_birth = form.cleaned_data.get("date_of_birth")
         self.patient.address = form.cleaned_data.get("address")
@@ -110,7 +125,6 @@ class BookAppointmentView(LoginRequiredMixin, FormView):
             reverse(
                 "checkout",
                 kwargs={
-                    "appointment_id": appointment.appointment_id,
                     "billing_id": billing.billing_id,
                 },
             )
@@ -121,14 +135,17 @@ class CheckoutView(LoginRequiredMixin, TemplateView):
     template_name = "base/checkout.html"
 
     def dispatch(self, request, *args, **kwargs):
-        appointment_id = self.kwargs.get("appointment_id")
         billing_id = self.kwargs.get("billing_id")
         self.patient = get_object_or_404(Patient, user=request.user)
-        self.appointment = get_object_or_404(
-            Appointment, appointment_id=appointment_id, patient=self.patient
-        )
         self.billing = get_object_or_404(
-            Billing, billing_id=billing_id, patient=self.patient
+            Billing,
+            billing_id=billing_id,
+            patient=self.patient,
+        )
+        self.appointment = get_object_or_404(
+            Appointment,
+            appointment_id=self.billing.appointment.appointment_id,
+            patient=self.patient,
         )
         return super().dispatch(request, *args, **kwargs)
 
@@ -139,3 +156,112 @@ class CheckoutView(LoginRequiredMixin, TemplateView):
         context["billing"] = self.billing
         context["STRIPE_PUBLIC_KEY"] = settings.STRIPE_PUBLIC_KEY
         return context
+
+
+class StripePaymentView(LoginRequiredMixin, View):
+    def dispatch(self, request: HttpRequest, *args, **kwargs):
+        billing_id = self.kwargs.get("billing_id")
+        self.patient = get_object_or_404(Patient, user=request.user)
+        self.billing = get_object_or_404(Billing, billing_id=billing_id)
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, request: HttpRequest, *args, **kwargs):
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+        try:
+            session = stripe.checkout.Session.create(
+                payment_method_types=["card"],
+                customer_email=self.billing.patient.email,
+                mode="payment",
+                line_items=[
+                    {
+                        "price_data": {
+                            "currency": "usd",
+                            "product_data": {
+                                "name": self.billing.appointment.service.name,
+                            },
+                            "unit_amount": int(self.billing.total * 100),
+                        },
+                        "quantity": 1,
+                    }
+                ],
+                success_url=request.build_absolute_uri(
+                    reverse(
+                        "stripe_payment_verify",
+                        kwargs={"billing_id": self.billing.billing_id},
+                    )
+                )
+                + "?session_id={CHECKOUT_SESSION_ID}",
+                cancel_url=request.build_absolute_uri(
+                    reverse(
+                        "stripe_payment_verify",
+                        kwargs={"billing_id": self.billing.billing_id},
+                    )
+                ),
+            )
+            return JsonResponse({"sessionId": session.id})
+        except stripe.error.StripeError as e:
+            return JsonResponse({"error": "Invalid Session Id"}, status=400)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+
+class PaymentStripeVerifyView(LoginRequiredMixin, View):
+    def dispatch(self, request: HttpRequest, *args, **kwargs):
+        billing_id = self.kwargs.get("billing_id")
+        self.patient = get_object_or_404(Patient, user=request.user)
+        self.billing = get_object_or_404(Billing, billing_id=billing_id)
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def get(self, request: HttpRequest, *args, **kwargs):
+        sessionId = self.request.GET.get("session_id")
+        if sessionId:
+            try:
+                session = stripe.checkout.Session.retrieve(sessionId)
+
+                if session.payment_status == "paid":
+                    if self.billing.status == BillingType.UNPAID:
+                        self.billing.status = BillingType.PAID
+                        self.billing.save()
+
+                        PatientNotification.objects.create(
+                            appointment=self.billing.appointment,
+                            patient=self.billing.appointment.patient,
+                            type=PatientNotificationType.SCHEDULED_APPOINTMENT,
+                        )
+
+                        DoctorNotification.objects.create(
+                            appointment=self.billing.appointment,
+                            doctor=self.billing.appointment.doctor,
+                            type=DoctorNotificationType.NEW_APPOINTMENT,
+                        )
+                        return redirect(
+                            f"{reverse('payment_status', kwargs={
+                            'billing_id': self.billing.billing_id
+                        })}?status=success"
+                        )
+
+            except (stripe.error.InvalidRequestError, Exception):
+                return redirect(
+                    f"{reverse('payment_status', kwargs={
+                    'billing_id': self.billing.billing_id
+                })}?status=failed"
+                )
+            except Exception as e:
+                return HttpResponseServerError("An error occurred: " + str(e))
+
+
+class PaymentStatusView(LoginRequiredMixin, DetailView):
+    template_name = "base/payment_status.html"
+    model = Billing
+
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context["status"] = self.request.GET.get("status")
+        return context
+
+    def get_object(self, queryset=None):
+        billing_id = self.kwargs.get("billing_id")
+        patient = get_object_or_404(Patient, user=self.request.user)
+        return get_object_or_404(Billing, billing_id=billing_id, patient=patient)

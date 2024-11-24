@@ -33,6 +33,13 @@ class Doctor(models.Model):
 
 
 class Notification(models.Model):
+    appointment = models.ForeignKey(
+        "base.Appointment",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="doctor_appointment_notifications",
+    )
     doctor = models.ForeignKey(Doctor, on_delete=models.SET_NULL, null=True, blank=True)
     date = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     is_seen = models.BooleanField(default=False)

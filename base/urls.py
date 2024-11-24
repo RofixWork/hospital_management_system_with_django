@@ -1,4 +1,5 @@
 from django.urls import path
+from django.views.decorators.csrf import csrf_exempt
 
 from . import views
 
@@ -11,8 +12,23 @@ urlpatterns = [
         name="book_appointment",
     ),
     path(
-        "checkout/<appointment_id>/<billing_id>",
+        "checkout/<billing_id>",
         views.CheckoutView.as_view(),
         name="checkout",
+    ),
+    path(
+        "stripe_payment/<billing_id>/",
+        csrf_exempt(views.StripePaymentView.as_view()),
+        name="stripe_payment",
+    ),
+    path(
+        "stripe-payment-verify/<billing_id>/",
+        views.PaymentStripeVerifyView.as_view(),
+        name="stripe_payment_verify",
+    ),
+    path(
+        "payment-status/<billing_id>",
+        views.PaymentStatusView.as_view(),
+        name="payment_status",
     ),
 ]

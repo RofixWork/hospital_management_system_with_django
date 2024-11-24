@@ -66,9 +66,7 @@ class Appointment(models.Model):
         blank=True,
         related_name="service_appointments",
     )
-    appointment_id = models.CharField(
-        max_length=6, unique=True, editable=False, null=True
-    )
+    appointment_id = models.CharField(max_length=6, editable=False, null=True)
     appointment_date = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     status = models.CharField(
         max_length=20,
@@ -99,7 +97,7 @@ class Appointment(models.Model):
 
 
 class MedicalRecord(models.Model):
-    appointment = models.OneToOneField(Appointment, on_delete=models.CASCADE)
+    appointment = models.ForeignKey(Appointment, on_delete=models.CASCADE)
     diagnosis = models.TextField()
     treatment = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
@@ -147,9 +145,9 @@ class Prescription(models.Model):
 
 
 class Billing(models.Model):
-    appointment = models.OneToOneField(Appointment, on_delete=models.CASCADE)
-    patient = models.OneToOneField(Patient, on_delete=models.CASCADE)
-    billing_id = models.CharField(max_length=6, unique=True, editable=False)
+    appointment = models.ForeignKey(Appointment, on_delete=models.CASCADE)
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
+    billing_id = models.CharField(max_length=6, editable=False)
     date = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=15, choices=BillingType.choices)
     sub_total = models.DecimalField(max_digits=10, decimal_places=2)
