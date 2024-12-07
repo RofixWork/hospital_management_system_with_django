@@ -1,0 +1,64 @@
+# 🏥 Hospital Management System with Django
+
+A robust hospital management system built with Django, designed to manage patients, doctors, lab tests, prescriptions, and medical records efficiently. The system includes secure Stripe payment integration for appointments, notifications, and authentication management for patients and doctors.
+
+---
+
+## 📋 Features
+
+- **Authentication Management:**
+  - Separate login and registration for patients and doctors.
+  - Secure and role-based access to the system.
+
+- **Patient Management:**
+  - Register and manage patient profiles.
+  - Securely store patient medical records.
+
+- **Doctor Management:**
+  - Register and manage doctor profiles and schedules.
+  - Notifications for new appointments.
+
+- **Appointments:**
+  - Patients can book appointments after successful payment via Stripe.
+  - Notifications sent to both patient and doctor upon appointment confirmation.
+
+- **Lab Tests:**
+  - Manage lab test records and results.
+
+- **Prescriptions:**
+  - Generate and store prescriptions for patients.
+
+- **Payments:**
+  - Stripe integration for secure payment processing for appointments.
+
+- **Admin Panel:**
+  - Jazzmin-powered admin interface for managing the system.
+  - Full control over patients, doctors, appointments, and lab tests.
+
+---
+
+## 🛠️ Technologies Used
+
+- **Backend:** Django (Python Framework)
+- **Frontend:** HTML, CSS, JavaScript (Django templates)
+- **Database:** SQLite (default for development)
+- **Payment Gateway:** Stripe
+- **Admin Panel:** Jazzmin
+- **Notifications:** After payment send Notification to Doctor and Patient
+
+---
+
+## 🚀 Installation and Setup
+
+Follow these steps to set up the project locally:
+
+### Prerequisites
+1. Install Python (>=3.8).
+2. Install Stripe account for payment processing.
+3. Install `pipenv` or `virtualenv` (optional but recommended).
+
+### Installation Steps
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/RofixWork/hospital_management_system_with_django.git
+   cd hospital_management_system_with_django
