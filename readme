@@ -62,3 +62,33 @@ Follow these steps to set up the project locally:
    ```bash
    git clone https://github.com/RofixWork/hospital_management_system_with_django.git
    cd hospital_management_system_with_django
+2. Install dependencies:
+    pip install -r requirements.txt
+3. Set up the database:
+    Run the migrations to create the necessary database tables:
+    python manage.py makemigrations
+
+    python manage.py migrate
+
+4. Create a superuser:
+
+    Create an admin account for managing the system:
+
+    python manage.py createsuperuser
+5. Configure Stripe:
+
+    Create a .env file in the project root directory.
+    Add the following keys to the .env file:
+
+    STRIPE_PUBLIC_KEY=your_stripe_public_key
+    STRIPE_SECRET_KEY=your_stripe_secret_key
+
+    Replace your_stripe_public_key and your_stripe_secret_key with your actual Stripe API keys.
+6. Run the development server:
+
+    python manage.py runserver
+
+    Access the application:
+
+    Open your browser and navigate to http://127.0.0.1:8000.
+    Use the superuser credentials to log in to the admin panel at http://127.0.0.1:8000/admin/.
